@@ -19,7 +19,7 @@ class WallFollower:
     def __init__(self):
         # Initialize your publishers and
         # subscribers
-        self.data = None    
+        self.data = None
         self.angle = 0
         self.cmd = AckermannDriveStamped()
         self.laser_sub = rospy.Subscriber(self.SCAN_TOPIC, LaserScan, self.scan, queue_size=1)
@@ -47,19 +47,20 @@ class WallFollower:
         turnAngle = 0
     #under ideal conditions, turnAngle is 0
     
+    #default SIDE in params file is -1
     # follow on left side
         if self.SIDE == -1:
-            dataside = len(self.data.ranges)*5/6-1
-            datadiagonal = len(self.data.ranges)*4/6-1
+            sideIndex = len(self.data.ranges)*5/6-1
+            diagIndex = len(self.data.ranges)*4/6-1
         # follow on right side
         elif self.SIDE == 1:
-            dataside = len(self.data.ranges)*1/6-1
-            datadiagonal = len(self.data.ranges)*2/6-1
+            sideIndex = len(self.data.ranges)*1/6-1
+            diagIndex = len(self.data.ranges)*2/6-1
             
-        left = self.data.ranges[dataside]
-        e1 = left - self.DESIRED_DISTANCE
-        forwardleft = self.data.ranges[datadiagonal]
-        e2 = forwardleft - (self.DESIRED_DISTANCE ** (1/2))
+        sideLength = self.data.ranges[sideIndex]
+        e1 = sideLength - self.DESIRED_DISTANCE
+        diagLength = self.data.ranges[diagIndex]
+        e2 = diagLength - (self.DESIRED_DISTANCE ** (1/2))
     #e2 goes against DESIRED_DISTANCE * sqrt(2) because of 45 45 90 triangle formula
     #in ideal conditions e1 and e2 should be zero (perfect distance, heading straight)
     
@@ -67,19 +68,19 @@ class WallFollower:
     
         #car is farther than desired distance, need to turn towards wall
         if e1 > 0 and e2 > 0:
-            turnAngle = 1
+            turnAngle = 0.5
         #car is pointed towards wall, need to turn away from wall
         elif e1 > 0 and e2 < 0:
-            turnAngle = -0.5
+            turnAngle = -1
         #car is pointed away from wall, needs to turn towards wall
         elif e1 < 0 and e2 > 0:
-            turnAngle = 0.5
+            turnAngle = 1
         #car is too close to wall, need to turn away from wall
         elif e1 < 0 and e2 < 0:
-            turnAngle = -1
+            turnAngle = -0.5
 
         #if none of the if or elif statements are run, turnAngle stays 0, ideal situation
-        return turnAngle    
+        return turnAngle
         #turnAngle is the angle which the car will turn by
 
 
